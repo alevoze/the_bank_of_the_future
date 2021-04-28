@@ -1,9 +1,16 @@
 import 'package:flutter/material.dart';
 
-// const primaryColorStyle = Color(0xFF082954);
-// const primaryColorStyle = Color(0xFF1a0f90);
-const primaryColorStyle = Color(0xFF1E3360);
-const primaryLightColorStyle = Color(0xFFb5bfcc);
+const primaryColorStyle = Color(0xFF448AFF);
+
+const primaryWeakColorStyle = Color(0xFF82B1FF);
+const primaryStrongColorStyle = Color(0xFF2979FF);
+
+// const primaryColorStyle = Color(0xFF536DEF);
+// const primaryColorStyle = Color(0xFF8C9EFF);
+// const primaryColorStyle = Color(0xFF2979FF);
+const primaryLightColorStyle = Color(0xFFf2f3f5);
+
+
 
 const accentColorStyle = Color(0xFFC1CF2F);
 

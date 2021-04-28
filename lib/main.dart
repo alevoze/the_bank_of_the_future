@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:the_bank_of_the_future/screens/register_screen.dart';
+import 'package:the_bank_of_the_future/utils/style.dart';
 
 void main() {
   runApp(MyApp());
@@ -13,9 +14,10 @@ class MyApp extends StatelessWidget {
       title: 'Flutter Demo',
       debugShowCheckedModeBanner: false,
       theme: ThemeData(
-
-        primarySwatch: Colors.blue,
-
+        scaffoldBackgroundColor: primaryColorStyle,
+        visualDensity: VisualDensity.adaptivePlatformDensity,
+        primaryColor: primaryColorStyle,
+        accentColor: primaryColorStyle
 
       ),
 
