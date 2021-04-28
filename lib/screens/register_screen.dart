@@ -1,6 +1,7 @@
 import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:the_bank_of_the_future/screens/sections/email_section.dart';
 import 'package:the_bank_of_the_future/utils/size_config.dart';
 import 'package:the_bank_of_the_future/utils/style.dart';
 import 'package:the_bank_of_the_future/utils/validators.dart';
@@ -16,14 +17,16 @@ class RegisterScreen extends StatefulWidget {
   _RegisterScreenState createState() => _RegisterScreenState();
 }
 
-class _RegisterScreenState extends State<RegisterScreen> with SingleTickerProviderStateMixin{
+class _RegisterScreenState extends State<RegisterScreen> with TickerProviderStateMixin{
   TextEditingController textController = TextEditingController();
   AnimationController _animationController;
-  Animation<double> _fabScale;
+  AnimationController _animationCalendar;
+  // Animation<double> _fabScale;
+  DateTime selectedDate = DateTime.now();
 
   final _formKey = GlobalKey<FormState>();
   final _formKey2 = GlobalKey<FormState>();
-  final _formKey3 = GlobalKey<FormState>();
+  // final _formKey3 = GlobalKey<FormState>();
 
   bool eightChars = false;
   bool specialChar = false;
@@ -35,6 +38,7 @@ class _RegisterScreenState extends State<RegisterScreen> with SingleTickerProvid
   String email;
   String password;
   bool remember = false;
+  String _value,_value1, _value2;
 
   final List<String> errors = [];
   final List<String> errors2 = [];
@@ -55,12 +59,48 @@ class _RegisterScreenState extends State<RegisterScreen> with SingleTickerProvid
       });
     }
   }
+
+  void addPasswordError({String error}){
+    if (!errors2.contains(error)) {
+      setState(() {
+        errors2.add(error);
+      });
+    }
+  }
+
+  void removePasswordError({String error}){
+    if (errors2.contains(error)) {
+      setState(() {
+        errors2.remove(error);
+      });
+    }
+  }
+
+  Future<void> _selectDate(BuildContext context) async {
+    final DateTime picked = await showDatePicker(
+        context: context,
+        initialDate: selectedDate,
+        firstDate: DateTime(2015, 8),
+        lastDate: DateTime(2101));
+    if (picked != null && picked != selectedDate)
+      setState(() {
+        selectedDate = picked;
+      });
+  }
   
   @override
   void initState() {
     // TODO: implement initState
     super.initState();
-    // _animationController = AnimationController(vsync: this, duration: Duration(seconds: 2));
+
+    _animationController = AnimationController(vsync: this,
+        duration: Duration(milliseconds: 500));
+
+
+    _animationCalendar = AnimationController(vsync: this,
+        duration: Duration(seconds: 1))
+      ..forward()
+      ..repeat(reverse: true);
 
     textController.addListener(() {
       setState(() {
@@ -78,11 +118,8 @@ class _RegisterScreenState extends State<RegisterScreen> with SingleTickerProvid
       }
     });
 
-    _animationController = AnimationController(vsync: this,
-        duration: const Duration(milliseconds: 500));
-
-    _fabScale = Tween<double>(begin: 0, end: 1)
-        .animate(CurvedAnimation(parent: _animationController, curve: Curves.bounceOut));
+    // _fabScale = Tween<double>(begin: 0, end: 1)
+    //     .animate(CurvedAnimation(parent: _animationController, curve: Curves.bounceOut));
   }
 
 
@@ -92,6 +129,7 @@ class _RegisterScreenState extends State<RegisterScreen> with SingleTickerProvid
     // TODO: implement dispose
     super.dispose();
     _animationController.dispose();
+    _animationCalendar.dispose();
   }
 
   @override
@@ -125,7 +163,7 @@ class _RegisterScreenState extends State<RegisterScreen> with SingleTickerProvid
                             thickness: 2,
                             color: Colors.white70,
                           ),
-                          content: Column(
+                          content:  Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: <Widget>[
                               SizedBox(height:50.0),
@@ -138,7 +176,6 @@ class _RegisterScreenState extends State<RegisterScreen> with SingleTickerProvid
                                 key: _formKey,
                                 child: Column(
                                   children: [
-
                                     Container(
                                       padding: EdgeInsets.all(5.0),
                                       decoration: BoxDecoration(
@@ -150,8 +187,8 @@ class _RegisterScreenState extends State<RegisterScreen> with SingleTickerProvid
                                       ),
                                       child: Container(
                                         decoration: BoxDecoration(
-                                          color: Colors.white,
-                                          borderRadius: BorderRadius.circular(8),
+                                            color: Colors.white,
+                                            borderRadius: BorderRadius.circular(8),
                                             boxShadow: [
                                               defaultShadow
                                             ]
@@ -161,12 +198,35 @@ class _RegisterScreenState extends State<RegisterScreen> with SingleTickerProvid
                                     ),
                                     SizedBox(height:5.0),
                                     FormError(errors: errors),
+                                    SizedBox(height:360.0),
+                                    Align(
+                                      alignment: Alignment.bottomCenter,
+                                      child: Container(
+                                        width: double.infinity,
+                                        height: 50,
+                                        color: Colors.blueAccent,
+                                        child: Center(
+                                          child:
+                                          DefaultButton(
+                                            text: "Next",
+                                            press:(){
+                                              if (_formKey.currentState.validate()) {
+                                                _formKey.currentState.save();
+                                                if (errors.length == 0) {
+                                                  continued();
+                                                }
+                                              }
+                                            },
+                                          ),
+                                        ),
+                                      ),
+                                    ),
                                   ],
                                 ),
                               ),
-                              SizedBox(height:40.0)
                             ],
                           ),
+                          // content:  EmailSection(),
                           isActive: _currentStep >= 0,
                           state: _currentStep >= 0 ?
                           StepState.complete : StepState.disabled,
@@ -211,15 +271,31 @@ class _RegisterScreenState extends State<RegisterScreen> with SingleTickerProvid
                                     ),
                                     SizedBox(height:5.0),
                                     FormPasswordError(errors: errors2),
+                                    SizedBox(height:30.0),
+                                    Row(
+                                      mainAxisAlignment: MainAxisAlignment.start,
+                                      children: [
+                                        Text("Complexity:"),
+                                      ],
+                                    ),
+                                    SizedBox(height:30.0),
+                                    Padding(padding: const EdgeInsets.all(3.0), child: _validationStack()),
+                                    SizedBox(height:300.0),
+                                    DefaultButton(
+                                      text: "Next",
+                                      press:(){
+                                        if (_formKey2.currentState.validate()) {
+                                          _formKey2.currentState.save();
+                                          if (eightChars == true && specialChar == true && upperCaseChar == true && number == true) {
+                                            continued();
+                                          }
+                                        }
+                                      },
+                                    ),
                                   ],
                                 ),
                               ),
                               SizedBox(height:30.0),
-                              Text("Complexity:"),
-                              Padding(
-                                  padding: const EdgeInsets.all(32.0), child: _validationStack()),
-
-                              SizedBox(height:400.0)
                             ],
                           ),
                           isActive: _currentStep >= 0,
@@ -232,9 +308,167 @@ class _RegisterScreenState extends State<RegisterScreen> with SingleTickerProvid
                             color: Colors.white70,
                           ),
                           content: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
                             children: <Widget>[
-                              TextFormField(
-                                decoration: InputDecoration(labelText: 'Mobile Number'),
+                              SizedBox(height:50.0),
+                              TitleText(
+                                title: "Personal Information",
+                                subTitle: "Please fill in the information below and your goal\nfor digital saving.",
+                              ),
+                              SizedBox(height:20.0),
+                              Container(
+                                padding: EdgeInsets.all(5.0),
+                                decoration: BoxDecoration(
+                                    color: Colors.white60,
+                                    borderRadius: BorderRadius.circular(8),
+                                    boxShadow: [
+                                      defaultShadow
+                                    ]
+                                ),
+                                child: Container(
+                                  decoration: BoxDecoration(
+                                      color: Colors.white,
+                                      borderRadius: BorderRadius.circular(8),
+                                      boxShadow: [
+                                        defaultShadow
+                                      ]
+                                  ),
+                                  child: DropdownButtonFormField(
+                                    decoration: InputDecoration(
+                                      border: InputBorder.none,
+                                      floatingLabelBehavior: FloatingLabelBehavior.always,
+                                      labelText: "Goal for activation",
+                                      contentPadding: EdgeInsets.only(left: 20,),
+                                    ),
+                                    value: _value,
+                                    hint: Text("- Choose Options -"),
+                                    items: [
+                                      DropdownMenuItem(
+                                        child: Text("Tech Division"),
+                                        value: "Tech Division",
+                                      ),
+                                      DropdownMenuItem(
+                                        child: Text("Finance Division"),
+                                        value: "Finance Division",
+                                      ),
+                                      DropdownMenuItem(
+                                        child: Text(" Marketing Division"),
+                                        value: "Marketing Division",
+                                      )
+                                    ],
+                                    onChanged: (value) {
+                                      setState(() {
+                                        _value = value;
+                                      });
+                                    },
+                                  ),
+                                ),
+                              ),
+                              SizedBox(height:20.0),
+                              Container
+                                (
+                                padding: EdgeInsets.all(5.0),
+                                decoration: BoxDecoration(
+                                    color: Colors.white60,
+                                    borderRadius: BorderRadius.circular(8),
+                                    boxShadow: [
+                                      defaultShadow
+                                    ]
+                                ),
+                                child: Container(
+                                  decoration: BoxDecoration(
+                                      color: Colors.white,
+                                      borderRadius: BorderRadius.circular(8),
+                                      boxShadow: [
+                                        defaultShadow
+                                      ]
+                                  ),
+                                  child: DropdownButtonFormField(
+                                    decoration: InputDecoration(
+                                      border: InputBorder.none,
+                                      floatingLabelBehavior: FloatingLabelBehavior.always,
+                                      labelText: "Monthly income",
+                                      contentPadding: EdgeInsets.only(left: 20,),
+                                    ),
+                                    value: _value,
+                                    hint: Text("- Choose Options -"),
+                                    items: [
+                                      DropdownMenuItem(
+                                        child: Text("Tech Division"),
+                                        value: "Tech Division",
+                                      ),
+                                      DropdownMenuItem(
+                                        child: Text("Finance Division"),
+                                        value: "Finance Division",
+                                      ),
+                                      DropdownMenuItem(
+                                        child: Text(" Marketing Division"),
+                                        value: "Marketing Division",
+                                      )
+                                    ],
+                                    onChanged: (value) {
+                                      setState(() {
+                                        _value = value;
+                                      });
+                                    },
+                                  ),
+                                ),
+                              ),
+                              SizedBox(height:20.0),
+                              Container(
+                                padding: EdgeInsets.all(5.0),
+                                decoration: BoxDecoration(
+                                    color: Colors.white60,
+                                    borderRadius: BorderRadius.circular(8),
+                                    boxShadow: [
+                                      defaultShadow
+                                    ]
+                                ),
+                                child: Container(
+                                  decoration: BoxDecoration(
+                                      color: Colors.white,
+                                      borderRadius: BorderRadius.circular(8),
+                                      boxShadow: [
+                                        defaultShadow
+                                      ]
+                                  ),
+                                  child: DropdownButtonFormField(
+                                    decoration: InputDecoration(
+                                      border: InputBorder.none,
+                                        floatingLabelBehavior: FloatingLabelBehavior.always,
+                                        labelText: "Monthly expense",
+                                      contentPadding: EdgeInsets.only(left: 20,),
+                                    ),
+                                    value: _value,
+                                    hint: Text("- Choose Options -"),
+                                    items: [
+                                      DropdownMenuItem(
+                                        child: Text("Tech Division"),
+                                        value: "Tech Division",
+                                      ),
+                                      DropdownMenuItem(
+                                        child: Text("Finance Division"),
+                                        value: "Finance Division",
+                                      ),
+                                      DropdownMenuItem(
+                                        child: Text(" Marketing Division"),
+                                        value: "Marketing Division",
+                                      )
+                                    ],
+                                    onChanged: (value) {
+                                      setState(() {
+                                        _value = value;
+                                      });
+                                    },
+                                  ),
+                                ),
+                              ),
+                              SizedBox(height:260.0),
+                              DefaultButton(
+                                text: "Next",
+                                press:(){
+                                  continued();
+                                },
                               ),
                             ],
                           ),
@@ -247,9 +481,133 @@ class _RegisterScreenState extends State<RegisterScreen> with SingleTickerProvid
                             thickness: 2,
                             color: Colors.white70,
                           ),
-                          content: SizedBox(
-                            height: 10,
-                            width: 10,
+                          content: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: <Widget>[
+                              Container(
+                                child: AnimatedBuilder(
+                                  animation: _animationCalendar,
+                                  builder: (context, child) {
+                                    return Container(
+                                      decoration: ShapeDecoration(
+                                        color: Colors.blue.withOpacity(0.5),
+                                        shape: CircleBorder(),
+                                      ),
+                                      child: Padding(
+                                        padding: EdgeInsets.all(8.0 * _animationCalendar.value),
+                                        child: child,
+                                      ),
+                                    );
+                                  },
+                                  child: Container(
+                                    decoration: ShapeDecoration(
+                                      color: Colors.white,
+                                      shape: CircleBorder(),
+                                    ),
+                                    child: IconButton(
+                                      onPressed: () => _selectDate(context),
+                                      color: Colors.blue,
+                                      icon: Icon(Icons.calendar_today, size: 24),
+                                    ),
+                                  ),
+                                ),
+                              ),
+                              SizedBox(height:20.0),
+                              TitleText(
+                                title: "Shedule Video Call",
+                                subTitle: "Choose the date and time that you preferred,\nwe will send a link via email to make a video call on\nthe schedule date and time.",
+                              ),
+                              SizedBox(height:20.0),
+                              Container(
+                                padding: EdgeInsets.all(5.0),
+                                decoration: BoxDecoration(
+                                    color: Colors.white60,
+                                    borderRadius: BorderRadius.circular(8),
+                                    boxShadow: [
+                                      defaultShadow
+                                    ]
+                                ),
+                                child: Container(
+                                  decoration: BoxDecoration(
+                                      color: Colors.white,
+                                      borderRadius: BorderRadius.circular(8),
+                                      boxShadow: [
+                                        defaultShadow
+                                      ]
+                                  ),
+                                  child: DropdownButtonFormField(
+                                    decoration: InputDecoration(
+                                      border: InputBorder.none,
+                                      floatingLabelBehavior: FloatingLabelBehavior.always,
+                                      labelText: "Date",
+                                      contentPadding: EdgeInsets.only(left: 20,),
+                                    ),
+                                    value: _value1,
+                                    hint: Text("- Choose Date -"),
+                                    items: [
+                                      DropdownMenuItem(
+                                        child: Text("Kamis, 02 Des 2019"),
+                                        value: "Kamis, 02 Des 2019",
+                                      ),
+                                    ],
+                                    onChanged: (value) {
+                                      setState(() {
+                                        _value1 = value;
+                                      });
+                                    },
+                                  ),
+                                ),
+                              ),
+                              SizedBox(height:20.0),
+                              Container
+                                (
+                                padding: EdgeInsets.all(5.0),
+                                decoration: BoxDecoration(
+                                    color: Colors.white60,
+                                    borderRadius: BorderRadius.circular(8),
+                                    boxShadow: [
+                                      defaultShadow
+                                    ]
+                                ),
+                                child: Container(
+                                  decoration: BoxDecoration(
+                                      color: Colors.white,
+                                      borderRadius: BorderRadius.circular(8),
+                                      boxShadow: [
+                                        defaultShadow
+                                      ]
+                                  ),
+                                  child: DropdownButtonFormField(
+                                    decoration: InputDecoration(
+                                      border: InputBorder.none,
+                                      floatingLabelBehavior: FloatingLabelBehavior.always,
+                                      labelText: "Time",
+                                      contentPadding: EdgeInsets.only(left: 20,),
+                                    ),
+                                    value: _value2,
+                                    hint: Text("- Choose Time -"),
+                                    items: [
+                                      DropdownMenuItem(
+                                        child: Text("10:10"),
+                                        value: "10:10",
+                                      ),
+                                    ],
+                                    onChanged: (value) {
+                                      setState(() {
+                                        _value2 = value;
+                                      });
+                                    },
+                                  ),
+                                ),
+                              ),
+                              SizedBox(height:310.0),
+                              DefaultButton(
+                                text: "Next",
+                                press:(){
+                                  continued();
+                                },
+                              ),
+                            ],
                           ),
                           isActive:_currentStep >= 0,
                           state: _currentStep >= 3 ?
@@ -259,44 +617,11 @@ class _RegisterScreenState extends State<RegisterScreen> with SingleTickerProvid
                     ),
                   ),
                 ),
-                Padding(
-                  padding: EdgeInsets.symmetric(horizontal: getProportionateScreenWidth(20.0)),
-                  child: Container(
-                    padding: EdgeInsets.all(5.0),
-                    decoration: BoxDecoration(
-                        color: primaryWeakColorStyle,
-                        borderRadius: BorderRadius.circular(8),
-                        boxShadow: [
-                          defaultShadow
-                        ]
-                    ),
-                    child: DefaultButton(
-                      text: "Next",
-                      press:(){
-                        if (_formKey.currentState.validate()) {
-                          _formKey.currentState.save();
-                        }
-                        if (errors.length == 0) {
-                          continued();
-                        }
-                        },
-
-                    ),
-                  ),
-                ),
                 SizedBox(height:20.0)
               ],
             ),
           ),
         ),
-// _animationController.forward(from: 0);
-        // floatingActionButton: FloatingActionButton(
-        //   child: Icon(Icons.list),
-        //   // onPressed: switchStepsType,
-        //   onPressed:(){
-        //     continued();
-        //   },
-        // ),
       ),
     );
   }
@@ -337,41 +662,43 @@ class _RegisterScreenState extends State<RegisterScreen> with SingleTickerProvid
     return TextFormField(
       controller: textController,
       obscureText: !_showPassword,
-      // validator: (value) {
-      //   if (value.isEmpty) {
-      //     addError(error: passNullError);
-      //     return "";
-      //   }else if ( value.length < 8 ) {
-      //     addError(error: shortPassError);
-      //     return "";
-      //   }
-      //   return null;
-      // },
-      // onChanged: (value) {
-      //   if (value.isNotEmpty) {
-      //     removeError(error: passNullError);
-      //   } else if ( value.length >= 8 ) {
-      //     removeError(error: shortPassError);
-      //   }
-      //   return null;
-      // },
-      // onSaved: (newValue) =>  password = newValue,
+      validator: (value) {
+        if (value.isEmpty) {
+          addPasswordError(error: passNullError);
+          return null;
+        }else if ( value.length < 8 ) {
+          addPasswordError(error: shortPassError);
+          return null;
+        }
+        return null;
+      },
+      onChanged: (value) {
+        if (value.isNotEmpty) {
+          removePasswordError(error: passNullError);
+        } else if ( value.length >= 8 ) {
+          removePasswordError(error: shortPassError);
+        }
+        return null;
+      },
+      onSaved: (newValue) =>  password = newValue,
       decoration: InputDecoration(
-          // labelText: "Password",
-          hintText: "Create Password",
-          border: InputBorder.none,
-          floatingLabelBehavior: FloatingLabelBehavior.always,
-          suffixIcon: GestureDetector(
-            onTap: () {
-              _togglevisibility();
-            },
-            child: Icon(
-              _showPassword ? Icons.visibility : Icons
-                  .visibility_off, color: Colors.blueAccent,),
-          ),
+        // labelText: "Password",
+        hintText: "Create Password",
+        border: InputBorder.none,
+        contentPadding: EdgeInsets.only(left: 20, top: 15),
+        floatingLabelBehavior: FloatingLabelBehavior.always,
+        suffixIcon: GestureDetector(
+          onTap: () {
+            _togglevisibility();
+          },
+          child: Icon(
+            _showPassword ? Icons.visibility : Icons
+                .visibility_off, color: Colors.blueAccent,),
+        ),
       ),
     );
   }
+
   tapped(int step){
     setState(() => _currentStep = step);
   }
@@ -388,115 +715,19 @@ class _RegisterScreenState extends State<RegisterScreen> with SingleTickerProvid
     return eightChars && number && specialChar && upperCaseChar;
   }
 
-  Stack _validationStack() {
-    return Stack(
-      alignment: Alignment.bottomLeft,
-      children: <Widget>[
-        Card(
-          shape: CircleBorder(),
-          color: Colors.black12,
-          child: Container(height: 150, width: 150,),),
-        Padding(
-          padding: const EdgeInsets.only(bottom: 32.0, left: 10),
-          child: Transform.rotate(
-            angle: -math.pi/20,
-            child: Icon(
-              Icons.lock,
-              color: Colors.pink,
-              size: 60,
-            ),
-          ),
-        ),
-        Padding(
-          padding: const EdgeInsets.only(left: 50.0, right: 60),
-          child: Transform.rotate(
-            angle: -math.pi / -60,
-            child: Card(
-              shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(5)),
-              elevation: 4,
-              color: Colors.yellow.shade800,
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: <Widget>[
-                  Padding(
-                    padding: const EdgeInsets.fromLTRB(8, 8, 0, 4),
-                    child: Container(
-                        alignment: Alignment.centerLeft,
-                        child: Icon(Icons.brightness_1, color: Colors.deepPurple,)),
-                  ),
-                  Padding(
-                    padding: const EdgeInsets.fromLTRB(8, 4, 0, 4),
-                    child: Container(
-                        alignment: Alignment.centerLeft,
-                        child: Icon(Icons.brightness_1, color: Colors.deepPurple,)),
-                  ),
-                  Padding(
-                    padding: const EdgeInsets.fromLTRB(8, 4, 0, 4),
-                    child: Container(
-                        alignment: Alignment.centerLeft,
-                        child: Icon(Icons.brightness_1, color: Colors.deepPurple,)),
-                  ),
-                  Padding(
-                    padding: const EdgeInsets.fromLTRB(8, 4, 0, 8),
-                    child: Container(
-                        alignment: Alignment.centerLeft,
-                        child: Icon(Icons.brightness_1, color: Colors.deepPurple,)),
-                  ),
-                ],
-              ),
-            ),
-          ),
-        ),
-        Padding(
-          padding: const EdgeInsets.only(left: 74),
-          child: Transform.rotate(
-            angle: math.pi / -45,
-            child: Card(
-              elevation: 6,
-              shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(5)),
-              child: Stack(
-                alignment: Alignment.bottomRight,
-                children: <Widget>[
-                  IntrinsicWidth(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      mainAxisSize: MainAxisSize.min,
-                      children: <Widget>[
-                        ValidationItem("8 characters", eightChars),
-                        _separator(),
-                        ValidationItem("1 special char", specialChar),
-                        _separator(),
-                        ValidationItem("1 upper case", upperCaseChar),
-                        _separator(),
-                        ValidationItem("1 number", number)
-                      ],
-                    ),
-                  ),
-                  Padding(
-                    padding: const EdgeInsets.all(8.0),
-                    child: Transform.scale(
-                      scale: _fabScale.value,
-                      child: Card(
-                        shape: CircleBorder(),
-                        color: Colors.green,
-                        child: Padding(
-                          padding: const EdgeInsets.all(8.0),
-                          child: Icon(
-                            Icons.check,
-                            color: Colors.white,
-                          ),
-                        ),
-                      ),
-                    ),
-                  )
-                ],
-              ),
-            ),
-          ),
-        )
-      ],
+  Widget _validationStack() {
+    return Row(
+        mainAxisAlignment: MainAxisAlignment.spaceAround,
+        children: [
+          ValidationItem("@", specialChar, "Symbol"),
+          _separator(),
+          ValidationItem("A", upperCaseChar, "Uppercase"),
+          _separator(),
+          ValidationItem("123", number, "Number"),
+          _separator(),
+          ValidationItem("9+", eightChars, "Characters"),
+        ]
+
     );
   }
 
@@ -513,6 +744,5 @@ class _RegisterScreenState extends State<RegisterScreen> with SingleTickerProvid
       decoration: BoxDecoration(color: Colors.blue.withAlpha(100)),
     );
   }
-
-
 }
+

@@ -2,8 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter/widgets.dart';
 import 'package:the_bank_of_the_future/utils/size_config.dart';
 
-
-
 class FormPasswordError extends StatelessWidget {
   const FormPasswordError({
     Key key,

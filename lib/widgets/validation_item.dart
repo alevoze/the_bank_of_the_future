@@ -1,9 +1,12 @@
+import 'dart:ui';
+
 import 'package:flutter/material.dart';
 
 class ValidationItem extends StatefulWidget {
-  ValidationItem(this.title, this.valid);
+  ValidationItem(this.title, this.valid, this.subtitle);
 
   final String title;
+  final String subtitle;
   final bool valid;
 
   @override
@@ -78,26 +81,19 @@ class _ValidationItemState extends State<ValidationItem>
       child: IntrinsicHeight(
         child: Row(
           children: <Widget>[
-            SizedBox(
-              width: 32,
-            ),
-            Container(
-              width: 1,
-              decoration: BoxDecoration(color: Colors.red),
-            ),
-            SizedBox(
-              width: _spaceWidth.value,
-            ),
             Padding(
               padding: const EdgeInsets.all(8.0),
               child: CustomPaint(
                   foregroundPainter: StrikeThroughPainter(_strikePercent.value),
-                  child: Text(widget.title,
-                      style: _getValidateStyle(widget.valid))),
+                  child: Column(
+                    children: [
+
+                      Text(widget.title,
+                          style: _getValidateStyle(widget.valid)),
+                      Text(widget.subtitle, style: TextStyle(color: Colors.black54),),
+                    ],
+                  )),
             ),
-            SizedBox(
-              width: 16,
-            )
           ],
         ),
       ),
@@ -107,7 +103,7 @@ class _ValidationItemState extends State<ValidationItem>
   TextStyle _getValidateStyle(bool validation) {
     return TextStyle(
         fontWeight: FontWeight.bold,
-        color: (validation) ? Colors.black54 : Colors.black87,
+        color: (validation) ? Colors.green : Colors.black,
         fontSize: 18,
         fontFamily: 'UbuntuMono',
         decoration: null);
